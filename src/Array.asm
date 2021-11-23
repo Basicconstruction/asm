@@ -1,0 +1,526 @@
+DATA1 SEGMENT
+    str1 db "123456711890 ",0
+    warr dw 12,67,89,19,0
+    barr db 1,2,3,4,5,6,0
+    carr db 2,2,1,0
+    darr db 1,1,4,0
+    barr2 db 10 dup(5)
+data1 ends
+code1 segment
+assume cs:code1,ds:data1
+getByteSortedAscending proc
+;bx 数组首地址
+;如果只有一个数据，则返回ch=0
+;cl数组长度
+;因为输出了ch所以cx被修改
+push bx
+push ax
+    mov ch,0
+    dec cl
+    getByteSortedAscending_loop:
+        mov al,[bx]
+        inc bx
+        cmp [bx],al
+        ja getByteSortedAscending_right
+        jb getByteSortedAscending_left
+        loop getByteSortedAscending_loop
+    getByteSortedAscending_right:
+        mov ch,0
+        jmp getByteSortedAscending_end
+    getByteSortedAscending_left:
+        mov ch,1
+    getByteSortedAscending_end:
+
+pop bx
+pop ax
+ret
+getByteSortedAscending endp
+getWordSortedAscending proc
+;bx 数组首地址
+;如果只有一个数据，则返回ch=0
+;cl数组长度
+;因为输出了ch所以cx被修改
+push bx
+push ax
+    mov ch,0
+    dec cl
+    getWordSortedAscending_loop:
+        mov ax,[bx]
+        add bx,02h
+        cmp [bx],ax
+        ja getWordSortedAscending_right
+        jb getWordSortedAscending_left
+        loop getWordSortedAscending_loop
+    getWordSortedAscending_right:
+        mov ch,0
+        jmp getWordSortedAscending_end
+    getWordSortedAscending_left:
+        mov ch,1
+    getWordSortedAscending_end:
+
+pop bx
+pop ax
+ret
+getWordSortedAscending endp
+insertByteIntoSortedArray proc
+;cl 要处理的数组长度 ch 数组排序方式 0 for 升序,else for 降序
+;dl 要插入的数据
+push cx
+push ax
+push bx
+
+pop bx
+pop ax
+pop cx
+ret
+insertByteIntoSortedArray endp
+insertByteIntoArray proc
+;cl为0则按照数组以0为结束
+;cl不为0，按照数组长度为cl来进行处理
+;dl插入位置,dh插入数字
+push ax
+push bx
+push cx
+push dx
+    mov ch,0
+    cmp cx,0h
+    je insertByteIntoArray_get_cx
+    jmp insertByteIntoArray_behave_cx
+    insertByteIntoArray_get_cx:
+        call getLengthOfByteArray
+        mov cl,al
+    insertByteIntoArray_behave_cx:
+        sub cl,dl
+        push dx
+        mov dh,0
+        add bx,dx
+        pop dx
+        call rightShiftByteArray
+        mov [bx],dh
+pop dx
+pop cx
+pop bx
+pop ax
+ret
+insertByteIntoArray endp
+insertWordIntoArray proc
+;cl为0则按照数组以0为结束
+;cl不为0，按照数组长度为cl来进行处理
+;dl插入位置,ax插入数字
+push ax
+push bx
+push cx
+push dx
+    mov ch,0
+    cmp cx,0h
+    je insertWordIntoArray_get_cx
+    jmp insertWordIntoArray_behave_cx
+    insertWordIntoArray_get_cx:
+        push ax
+        call getLengthOfWordArray
+        mov cl,al
+        pop ax
+    insertWordIntoArray_behave_cx:
+        sub cl,dl
+        push dx
+        add bl,dl
+        adc bh,0
+        add bl,dl
+        adc bh,0
+        pop dx
+        call rightShiftWordArray
+        mov [bx],ax
+pop dx
+pop cx
+pop bx
+pop ax
+ret
+insertWordIntoArray endp
+rightShiftByteArray proc
+;子程序修改了si,di的值
+push ax
+push cx
+push bx
+    mov ch,0
+    cmp cx,0h
+    je rightShiftByteArray_get_cx
+    jmp rightShiftByteArray_behave_cx
+    rightShiftByteArray_get_cx:
+        call getLengthOfByteArray
+        mov cl,al
+    rightShiftByteArray_behave_cx:
+        add bx,cx
+        std
+        mov di,bx
+        mov si,bx
+        dec si
+        rep movsb
+pop bx
+pop cx
+pop ax
+ret
+rightShiftByteArray endp
+rightShiftWordArray proc
+;子程序修改了si,di的值
+push ax
+push cx
+push bx
+    mov ch,0h
+    cmp cx,0h
+    je rightShiftWordArray_get_cx
+    jmp rightShiftWordArray_behave_cx
+    rightShiftWordArray_get_cx:
+        call getLengthOfWordArray
+        mov cl,al
+    rightShiftWordArray_behave_cx:
+        add bx,cx
+        add bx,cx
+        std
+        mov di,bx
+        mov si,bx
+        sub si,2h
+        rep movsw
+pop bx
+pop cx
+pop ax
+ret
+rightShiftWordArray endp
+getLengthOfByteArray proc
+;输入参数bx,数组起始值
+;输出参数al,计算到下一个0之间的元素个数
+push cx
+push bx
+    mov al,0
+    getLengthOfByteArray_loop:
+        mov cl,[bx]
+        cmp cl,0h
+        je getLengthOfByteArray_break
+        inc al
+        inc bx
+        jmp getLengthOfByteArray_loop
+    getLengthOfByteArray_break:
+pop bx
+pop cx
+ret
+getLengthOfByteArray endp
+getLengthOfWordArray proc
+;输入参数bx,数组起始值
+;输出参数al,计算到下一个0之间的元素个数
+push cx
+push bx
+    mov al,0
+    getLengthOfWordArray_loop:
+        mov cx,[bx]
+        cmp cx,0h
+        je getLengthOfWordArray_break
+        inc al
+        add bx,02h
+        jmp getLengthOfWordArray_loop
+    getLengthOfWordArray_break:
+pop bx
+pop cx
+ret
+getLengthOfWordArray endp
+printByteArray proc
+;输出一个字节数组,
+;bx提供数组首地址
+;如果cx!=0那么直接输出cx个元素
+;如果cx==0那么一直输出直到遇到第一个0
+push ax
+push cx
+push bx
+    mov ah,0
+    cmp cx,0h
+    jne printByteArray_with_cx
+    jmp printByteArray_without_cx
+    printByteArray_with_cx:
+        printByteArray_with_cx_loop:
+            mov al,[bx]
+            call print8
+            call printBlank
+            inc bx
+            loop printByteArray_with_cx_loop
+        jmp printByteArray_end
+    printByteArray_without_cx:
+        dec bx
+        printByteArray_without_cx_loop:
+            inc bx
+            mov al,[bx]
+            cmp al,0h
+            jne printByteArray_without_cx_not_end
+            jmp printByteArray_end
+        printByteArray_without_cx_not_end:
+            call print8
+            call printBlank
+            jmp printByteArray_without_cx_loop
+    printByteArray_end:
+        pop bx
+        pop cx
+        pop ax
+ret
+printByteArray endp
+printWordArray proc
+;输出一个双字数组,
+;bx提供数组首地址
+;如果cx!=0那么直接输出cx个元素
+;如果cx==0那么一直输出直到遇到第一个0
+push ax
+push cx
+push bx
+    mov ah,0
+    cmp cx,0h
+    jne printWordArray_with_cx
+    jmp printWordArray_without_cx
+    printWordArray_with_cx:
+        printWordArray_with_cx_loop:
+            mov ax,[bx]
+            call print16
+            call printBlank
+            add bx,02h
+            loop printWordArray_with_cx_loop
+        jmp printWordArray_end
+    printWordArray_without_cx:
+        sub bx,02h
+        printWordArray_without_cx_loop:
+            add bx,02h
+            mov ax,[bx]
+            cmp ax,0h
+            jne printWordArray_without_cx_not_end
+            jmp printWordArray_end
+        printWordArray_without_cx_not_end:
+            call print16
+            call printBlank
+            jmp printWordArray_without_cx_loop
+    printWordArray_end:
+        pop bx
+        pop cx
+        pop ax
+ret
+printWordArray endp
+println proc
+    ;换行
+    push ax
+    push dx
+    mov dl,0ah
+    mov ah,02h
+    int 21h
+    pop dx
+    pop ax
+    ret
+println endp
+printBlank proc
+    ;输出空格
+    push ax
+    push dx
+    mov dl,20h
+    mov ah,02h
+    int 21h
+    pop dx
+    pop ax
+    ret
+printBlank endp
+print8 proc
+        ;输入参数 al
+        ;功能 输出al数字代表的字符,例如 al = 31,输出 '3''1' as  31
+        push ax
+        push bx
+        push cx
+        push dx
+        mov cl,0   ;存储 存储在栈上的长度
+        pnloop:
+            cmp al,0ah
+            jb pushLastOne
+            jmp loopPush
+            pushLastOne:
+                add cl,01h
+                mov bl,al
+                xor bh,bh
+                push bx     ;将单个数字推入到栈
+                jmp outofpushnumbers
+            loopPush:
+                add cl,01h
+                mov dl,al
+                cmp dl,100
+                jae sub100
+                jmp sub10judge
+                sub100:
+                    sub dl,100
+                    jae sub100
+                sub10judge:
+                    cmp dl,0ah
+                    jae sub10
+                    jmp readygo
+                sub10:
+                    sub dl,0ah
+                    cmp dl,0ah
+                    jae sub10
+                readygo:
+                    mov bl,dl
+                    xor bh,bh
+                    push bx     ;将单个数字推入到栈
+                    mov ah,0
+                    mov dh,10
+                    div dh
+                    jmp pnloop
+        outofpushnumbers:
+            xor ch,ch
+            mov ah,02h
+            printChar:
+                pop bx
+                mov dl,bl
+                add dl,30h
+                int 21H
+                loop printChar
+            pop dx
+            pop cx
+            pop bx
+            pop ax
+    ret
+print8 endp
+print16 proc
+        ;输入参数 ax
+        ;功能 输出ax数字代表的字符,例如 ax = 31,输出 '3''1' as  31
+        push ax
+        push bx
+        push cx
+        push dx
+        mov cl,0   ;存储 存储在栈上的长度
+        pnloop16:
+            cmp ax,0ah
+            jb pushLastOne16
+            jmp loopPush16
+            pushLastOne16:
+                add cl,01h
+                mov bx,ax
+                push bx     ;将单个数字推入到栈
+                jmp outofpushnumbers16
+            loopPush16:
+                add cl,01h
+                mov dx,ax
+                cmp dx,10000
+                jae sub10000_16
+                jmp sub1000judge16
+                sub10000_16:
+                    sub dx,10000
+                    cmp dx,10000
+                    jae sub10000_16
+                sub1000judge16:
+                    cmp dx,1000
+                    jae sub1000_16
+                    jmp sub100judge16
+                sub1000_16:
+                    sub dx,1000
+                    cmp dx,1000
+                    jae sub1000_16
+                sub100judge16:
+                    cmp dx,100
+                    jae sub100_16
+                    jmp sub10judge16
+                sub100_16:
+                    sub dx,100
+                    cmp dx,100
+                    jae sub100_16
+                sub10judge16:
+                    cmp dx,0ah
+                    jae sub10_16
+                    jmp readygo16
+                sub10_16:
+                    sub dx,0ah
+                    cmp dx,0ah
+                    jae sub10_16
+                readygo16:
+                    mov bx,dx
+                    push bx     ;将单个数字推入到栈
+                    mov bx,10
+                    mov dx,0
+                    div bx
+                    jmp pnloop16
+        outofpushnumbers16:
+            xor ch,ch
+            mov ah,02h
+            printChar16:
+                pop bx
+                mov dl,bl
+                add dl,30h
+                int 21H
+                loop printChar16
+            pop dx
+            pop cx
+            pop bx
+            pop ax
+    ret
+print16 endp
+
+start:
+;1 2 3 4 5 6 0
+;1 2 3 4 4 5 0
+    mov ax,data1
+    mov ds,ax
+    mov es,ax
+
+    lea bx,carr
+    mov cx,3h
+    push bx
+    push ax
+    mov ch,0
+    dec cl
+    getByteSortedAscending_loop:
+        mov al,[bx]
+        inc bx
+        cmp [bx],al
+        ja getByteSortedAscending_right
+        jb getByteSortedAscending_left
+        loop getByteSortedAscending_loop
+    getByteSortedAscending_right:
+        mov ch,0
+        jmp getByteSortedAscending_end
+    getByteSortedAscending_left:
+        mov ch,1
+    getByteSortedAscending_end:
+
+pop ax
+pop ax  
+
+    mov al,ch
+    call print8
+    call printBlank
+
+    mov ax,data1
+    mov ds,ax
+    mov es,ax
+    lea bx,darr
+    mov cx,3H
+
+    mov al,ch
+    MOV AH,0
+    call print16
+
+
+    ; ; mov cx,2
+    ; ; lea bx,barr
+    ; ; add bx,3
+    ; ; call rightShiftByteArray
+
+    ; lea bx,barr
+    ; mov cx,0
+    ; mov dl,3h
+    ; mov dh,9
+    ; call insertByteIntoArray
+
+    ; mov cx,9
+    ; call printByteArray
+    ; call println
+
+    ; lea bx,warr
+    ; mov cx,4
+    ; mov dl,3
+    ; mov ax,100h
+    ; call insertWordIntoArray
+
+    ; mov cx,7
+    ; call printWordArray
+    mov ax,4c00h
+    int 21h;调用dos退出函数
+
+CODE1 ENDS
+END START

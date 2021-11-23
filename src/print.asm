@@ -3,7 +3,7 @@ DATA1 SEGMENT
 data1 ends
 code1 segment
 assume cs:code1,ds:data1
-printstr proc
+printString proc
     ;入口参数bx 字符串首地址，结束标识 0 (00)
     ;输出字符串,字符串以0结束，或者如果cl!=0，则输出cl长度
     push ax
@@ -12,25 +12,25 @@ printstr proc
     mov ah,02h
     mov ch,0h
     cmp cx,0h
-    jne printstr_with_cx
-    printstr_without_cx:
+    jne printString_with_cx
+    printString_without_cx:
         mov dl,[bx]
         cmp dl,0h
         je printbreak
         int 21h
         inc bx
-        jmp printstr_without_cx
-    printstr_with_cx:
+        jmp printString_without_cx
+    printString_with_cx:
         mov dl,[bx]
         inc bx
         int 21H
-        loop printstr_with_cx
+        loop printString_with_cx
     printbreak:
         pop dx
         pop cx
         pop ax
     ret
-printstr endp
+printString endp
 println proc
     ;换行
     push ax
@@ -169,26 +169,26 @@ print16 proc
             pop bx
     ret
 print16 endp
-lengthOfStr proc
+getLengthOfString proc
     ;输入参数bx 字符串初始地址
     ;输出参数al字符串长度
     push cx
     push bx
     mov al,0h
-    counterLength:
+    getLengthOfString_loop:
         mov cl,[bx]
         cmp cl,0h
-        je break
+        je getLengthOfString_break
         inc al
         inc bx
-        jmp counterLength
-    break:
+        jmp getLengthOfString_loop
+    getLengthOfString_break:
         pop bx
         pop cx
 
     ret
-lengthOfStr endp
-counter proc
+getLengthOfString endp
+counterByte proc
     ;输入参数查找字符 dl,字符串首地址bx
     ;输出参数 字符数目al
     ;如果cl!=0 就按照cl长度来查找，否则按照字符串以0结束,该方法也可以快速改为以某一可变字符结束
@@ -197,123 +197,49 @@ counter proc
     push bx
     mov ch,0
     cmp cx,0h
-    jne counter_with_cx
-    ; jmp counter_without_cx
-    counter_without_cx:
-        call lengthOfStr
+    jne counterByte_with_cx
+    ; jmp counterByte_without_cx
+    counterByte_without_cx:
+        call getLengthOfString
         mov cl,al
-        counterloop:
+        counterByteloop:
             cmp cl,0h
-            je counter_break
+            je counterByte_break
             mov ch,[bx]
             inc bx
             dec cl
             cmp ch,dl
-            je counterloop
+            je counterByteloop
             dec al
-            jmp counterloop
-    counter_with_cx:
+            jmp counterByteloop
+    counterByte_with_cx:
         mov al,cl
-        counter_with_loop:
+        counterByte_with_loop:
             mov ah,[bx]
             inc bx
             cmp ah,dl
-            je counter_with_notdec_al
-            counter_with_dec_al:
+            je counterByte_with_notdec_al
+            counterByte_with_dec_al:
                 dec al
-                loop counter_with_loop
-            counter_with_notdec_al:
-                loop counter_with_loop
-    counter_break:
+                loop counterByte_with_loop
+            counterByte_with_notdec_al:
+                loop counterByte_with_loop
+    counterByte_break:
         pop bx
         pop cx
     ret
-counter endp
+counterByte endp
 start:
     mov ax,seg str1
     mov ds,ax
     lea bx,str1
-    call lengthOfStr
+    call getLengthOfString
     call print8
     call println
     mov dl,31h
     mov cx,8
-    call counter
-    ; push cx
-    ; push bx
-    ; cmp cx,0h
-    ; jne counter_with_cx
-    ; ; jmp counter_without_cx
-    ; counter_without_cx:
-    ;     call lengthOfStr
-    ;     mov cl,al
-    ;     counterloop:
-    ;         cmp cl,0h
-    ;         je counter_break
-    ;         mov ch,[bx]
-    ;         inc bx
-    ;         dec cl
-    ;         cmp ch,dl
-    ;         je counterloop
-    ;         dec al
-    ;         jmp counterloop
-    ; counter_with_cx:
-    ;     mov ah,[bx]
-    ;     inc bx
-    ;     cmp ah,dl
-    ;     je counter_with_notdec_al
-    ;     counter_with_dec_al:
-    ;         dec al
-    ;         loop counter_with_cx
-    ;     counter_with_notdec_al:
-    ;         loop counter_with_cx
-    ; counter_break:
-    ;     pop bx
-    ;     pop cx
+    call counterByte
     call print8
-    call println
-    call printstr
-    ; mov al,8
-    ; call print8
-    ; mov ah,02h
-    ; mov dl,01h
-    ; int 21h
-    ; mov al,97
-    ; call print8
-    ; mov ah,02h
-    ; mov dl,01h
-    ; int 21h
-    ; mov al,179
-    ; call print8
-    ; mov ah,02h
-    ; mov dl,0ah
-    ; ; mov dl,01h
-    ; int 21h
-    ; mov ax,7
-    ; call print16
-    ; mov ah,02h
-    ; mov dl,01h
-    ; int 21h
-    ; mov ax,76
-    ; call print16
-    ; mov ah,02h
-    ; mov dl,01h
-    ; int 21h
-    ; mov ax,129
-    ; call print16
-    ; mov ah,02h
-    ; mov dl,01h
-    ; int 21h
-    ; mov ax,4399
-    ; call print16
-    ; mov ah,02h
-    ; mov dl,01h
-    ; int 21h
-    ; mov ax,13248
-    ; call print16
-    ; mov ah,02h
-    ; mov dl,01h
-    ; int 21h
     mov ax,4c00h
     int 21h;调用dos退出函数
             

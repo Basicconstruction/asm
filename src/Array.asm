@@ -62,6 +62,107 @@ pop bx
 pop ax
 ret
 getWordSortedAscending endp
+
+getFitBytePlaceToInsertInto proc
+;这个函数仅处理cx,数组长度已知的数组
+;bx数组首地址,al传入的值
+;dl 插入位置          --dx将会被改变
+push ax
+push cx
+push bx
+    mov ch,0
+    cmp cx,0
+    je getFitBytePlaceToInsertInto_end_unual
+    mov dx,0
+
+    push bx
+    add bx,cx
+    dec bx
+    cmp al,[bx]
+    jae getFitBytePlaceToInsertInto_end_pre
+    pop bx
+    dec cx
+    getFitBytePlaceToInsertInto_loop:
+        cmp al,[bx]
+        jbe getFitBytePlaceToInsertInto_end
+        inc bx
+        cmp al,[bx]
+        ja getFitBytePlaceToInsertInto_loop_main
+        jmp getFitBytePlaceToInsertInto_loop_break_branch
+    getFitBytePlaceToInsertInto_loop_main:
+        inc dx
+        loop getFitBytePlaceToInsertInto_loop
+    getFitBytePlaceToInsertInto_loop_break_branch:
+        inc dx
+        jmp getFitBytePlaceToInsertInto_end
+    getFitBytePlaceToInsertInto_end_pre:
+        pop bx
+        mov dx,cx
+        jmp getFitBytePlaceToInsertInto_end
+    getFitBytePlaceToInsertInto_end_unual:
+        push ax
+        mov ax,6666
+        call print16
+        pop ax
+        call println
+    getFitBytePlaceToInsertInto_end:
+        
+pop bx
+pop cx
+pop ax
+ret
+getFitBytePlaceToInsertInto endp
+
+getFitWordPlaceToInsertInto proc
+;这个函数仅处理cx,数组长度已知的数组
+;bx数组首地址,ax传入的值
+;dl 插入位置          --dx将会被改变
+push ax
+push cx
+push bx
+    mov ch,0
+    cmp cx,0
+    je getFitWordPlaceToInsertInto_end_unual
+    mov dx,0
+
+    push bx
+    add bx,cx
+    add bx,cx
+    sub bx,02h
+    cmp al,[bx]
+    jae getFitWordPlaceToInsertInto_end_pre
+    pop bx
+    dec cx
+    getFitWordPlaceToInsertInto_loop:
+        cmp ax,[bx]
+        jbe getFitWordPlaceToInsertInto_end
+        add bx,02h
+        cmp ax,[bx]
+        ja getFitWordPlaceToInsertInto_loop_main
+        jmp getFitWordPlaceToInsertInto_loop_break_branch
+    getFitWordPlaceToInsertInto_loop_main:
+        inc dx
+        loop getFitWordPlaceToInsertInto_loop
+    getFitWordPlaceToInsertInto_loop_break_branch:
+        inc dx
+        jmp getFitWordPlaceToInsertInto_end
+    getFitWordPlaceToInsertInto_end_pre:
+        pop bx
+        mov dx,cx
+        jmp getFitWordPlaceToInsertInto_end
+    getFitWordPlaceToInsertInto_end_unual:
+        push ax
+        mov ax,6666
+        call print16
+        pop ax
+        call println
+    getFitWordPlaceToInsertInto_end:
+        
+pop bx
+pop cx
+pop ax
+ret
+getFitWordPlaceToInsertInto endp
 insertByteIntoSortedArray proc
 ;cl 要处理的数组长度 ch 数组排序方式 0 for 升序,else for 降序
 ;dl 要插入的数据
@@ -229,7 +330,7 @@ printByteArray proc
 push ax
 push cx
 push bx
-    mov ah,0
+    mov ch,0
     cmp cx,0h
     jne printByteArray_with_cx
     jmp printByteArray_without_cx
@@ -458,67 +559,55 @@ start:
     mov ds,ax
     mov es,ax
 
-    lea bx,carr
-    mov cx,3h
-    push bx
-    push ax
-    mov ch,0
-    dec cl
-    getByteSortedAscending_loop:
-        mov al,[bx]
-        inc bx
-        cmp [bx],al
-        ja getByteSortedAscending_right
-        jb getByteSortedAscending_left
-        loop getByteSortedAscending_loop
-    getByteSortedAscending_right:
-        mov ch,0
-        jmp getByteSortedAscending_end
-    getByteSortedAscending_left:
-        mov ch,1
-    getByteSortedAscending_end:
-
-pop ax
-pop ax  
-
-    mov al,ch
+    lea bx,darr
+    call getLengthOfByteArray
+    mov cx,ax
     call print8
     call printBlank
-
-    mov ax,data1
-    mov ds,ax
-    mov es,ax
-    lea bx,darr
-    mov cx,3H
-
-    mov al,ch
-    MOV AH,0
+    mov ax,bx
     call print16
+    call println
 
+    mov al,1
+    mov cx,3
+    call getFitBytePlaceToInsertInto
+    mov ax,dx
+    call print8
+    call printBlank
+    mov ax,bx
+    call print16
+    call println
 
-    ; ; mov cx,2
-    ; ; lea bx,barr
-    ; ; add bx,3
-    ; ; call rightShiftByteArray
+    mov al,2
+    mov cx,3
+    call getFitBytePlaceToInsertInto
+    mov ax,dx
+    call print8
+    call printBlank
+    mov ax,bx
+    call print16
+    call println
 
-    ; lea bx,barr
-    ; mov cx,0
-    ; mov dl,3h
-    ; mov dh,9
-    ; call insertByteIntoArray
+    mov al,4
+    mov cx,3
+    call getFitBytePlaceToInsertInto
+    mov ax,dx
+    call print8
+    call printBlank
+    mov ax,bx
+    call print16
+    call println
 
-    ; mov cx,9
-    ; call printByteArray
-    ; call println
+    mov al,5
+    mov cx,3
+    call getFitBytePlaceToInsertInto
+    mov ax,dx
+    call print8
+    call printBlank
+    mov ax,bx
+    call print16
+    call println
 
-    ; lea bx,warr
-    ; mov cx,4
-    ; mov dl,3
-    ; mov ax,100h
-    ; call insertWordIntoArray
-
-    ; mov cx,7
-    ; call printWordArray
     mov ax,4c00h
     int 21h;调用dos退出函数
 

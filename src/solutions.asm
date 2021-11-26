@@ -1,5 +1,5 @@
 DATA1 SEGMENT
-    X dw 400
+    X dw 125
     ddarr dw 5,134,256,347,890,1123,0
     message db "please input a number: ",0
     message_sum db "the sum is: ",0
@@ -218,11 +218,15 @@ start:
         cmp ax,[bx]
         jbe xchg_sign
         add bx,02h
-        loop xchg_loop
+        dec cx
+        cmp cx,0
+        ja xchg_loop
+        jmp xchg_end
     xchg_sign:
         xchg ax,[bx]
         add bx,02h
         loop xchg_loop
+    xchg_end:
     xchg ax,[bx]
     pop cx
     

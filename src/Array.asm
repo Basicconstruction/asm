@@ -1,10 +1,7 @@
 DATA1 SEGMENT
-    str1 db "123456711890 ",0
-    warr dw 12,67,89,19,0
-    barr db 1,2,3,4,5,6,0
-    carr db 2,2,1,0
-    darr db 1,1,4,0
-    barr2 db 10 dup(5)
+    barr1 db 5,1,2,3,5,6
+    X dw 400
+    ddarr dw 5,134,256,347,890,1123
 data1 ends
 code1 segment
 assume cs:code1,ds:data1
@@ -129,7 +126,7 @@ push bx
     add bx,cx
     add bx,cx
     sub bx,02h
-    cmp al,[bx]
+    cmp ax,[bx]
     jae getFitWordPlaceToInsertInto_end_pre
     pop bx
     dec cx
@@ -163,6 +160,7 @@ pop cx
 pop ax
 ret
 getFitWordPlaceToInsertInto endp
+
 insertByteIntoSortedArray proc
 ;cl 要处理的数组长度 ch 数组排序方式 0 for 升序,else for 降序
 ;dl 要插入的数据
@@ -478,6 +476,43 @@ print8 proc
             pop ax
     ret
 print8 endp
+print16as proc
+push ax
+push bx
+push dx
+push cx
+    mov cx,0h
+    cmp bx,10
+    je print16as_loop
+    cmp bx,2
+    je print16as_loop
+    cmp bx,16
+    je print16as_loop
+    mov bx,10
+    print16as_loop:
+        cmp ax,0
+        jbe print16as_break
+        mov dx,0
+        div bx
+        push dx
+        inc cx
+        jmp print16as_loop
+    print16as_break:
+        pop dx
+        add dl,30h
+        cmp dl,39h
+        jbe print16as_break_noneed
+        add dl,31h
+    print16as_break_noneed:
+        mov ah,02h
+        int 21h
+        loop print16as_break
+pop cx
+pop dx
+pop bx
+pop ax
+ret
+print16as endp
 print16 proc
         ;输入参数 ax
         ;功能 输出ax数字代表的字符,例如 ax = 31,输出 '3''1' as  31
@@ -551,65 +586,122 @@ print16 proc
             pop ax
     ret
 print16 endp
+inputSignalNumber proc
+    mov ah,01h
+    int 21h
+ret
+inputSignalNumber endp
+input16 proc
+push bx
+push cx
+push dx
+    mov ax,0
+    mov cx,0
+    input16_loop:
+        call inputSignalNumber
+        cmp al,0dh
+        je input16_end
+        inc cx
+        sub al,30h
+        push ax
+        jmp input16_loop
+    input16_end:
+        mov ax,0h
+        mov ch,0
+        input16_getout:
+            pop dx
+            push ax
+            push cx
+            mov cl,ch
+            xor ch,ch
+            mov dh,0
+            mov ax,dx
+            call multiply_help
+            pop cx
+            mov dx,ax
+            pop ax
+            add ax,dx
+            dec cx
+            inc ch
+            cmp cl,0h
+            ja input16_getout
 
+pop dx
+pop cx
+pop bx
+ret
+input16 endp
+
+multiply_help proc
+push cx
+push bx
+push dx
+    mov bx,10
+    multiply_help_loop:
+        cmp cl,0
+        je multiply_help_break
+        mul bx
+        loop multiply_help_loop
+    multiply_help_break:
+pop dx
+pop bx
+pop cx
+ret
+multiply_help endp
 start:
-;1 2 3 4 5 6 0
-;1 2 3 4 4 5 0
     mov ax,data1
     mov ds,ax
     mov es,ax
 
-    lea bx,darr
-    call getLengthOfByteArray
-    mov cx,ax
-    call print8
-    call printBlank
-    mov ax,bx
-    call print16
+    call input16
+    mov bx,2
+    call print16as
     call println
-
-    mov al,1
-    mov cx,3
-    call getFitBytePlaceToInsertInto
-    mov ax,dx
-    call print8
-    call printBlank
-    mov ax,bx
-    call print16
+    mov bx,16
+    call print16as
     call println
-
-    mov al,2
-    mov cx,3
-    call getFitBytePlaceToInsertInto
-    mov ax,dx
-    call print8
-    call printBlank
-    mov ax,bx
     call print16
-    call println
 
-    mov al,4
-    mov cx,3
-    call getFitBytePlaceToInsertInto
-    mov ax,dx
-    call print8
-    call printBlank
-    mov ax,bx
-    call print16
-    call println
+    ; first question
+        ; lea bx,ddarr
+        ; mov cl,[bx]
+        ; push cx
+        ; inc cx
+        ; call printWordArray
+        ; call println
+        ; pop cx
+        ; add bx,02h
+        ; mov ax,X
+        ; call getFitWordPlaceToInsertInto
+        ; call insertWordIntoArray
+        ; mov al,dl
+        ; call print8
+        ; call println
 
-    mov al,5
-    mov cx,3
-    call getFitBytePlaceToInsertInto
-    mov ax,dx
-    call print8
-    call printBlank
-    mov ax,bx
-    call print16
-    call println
-
+        ; lea bx,ddarr
+        ; inc cx
+        ; mov [bx],cx
+        ; mov cx,7
+        ; call printWordArray
     mov ax,4c00h
     int 21h;调用dos退出函数
 
 CODE1 ENDS
 END START
+
+    ; lea bx,barr1
+    ; mov cl,[bx]
+    ; push cx
+    ; inc cx
+    ; call printByteArray
+    ; call println
+    ; pop cx
+    ; inc bx
+    ; mov al,X
+    ; call getFitBytePlaceToInsertInto
+    ; mov dh,X
+    ; call insertByteIntoArray
+
+    ; lea bx,barr1
+    ; mov cx,7
+    ; call printByteArray

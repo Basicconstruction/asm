@@ -7,6 +7,7 @@ printString proc
     ;入口参数bx 字符串首地址，结束标识 0 (00)
     ;输出字符串,字符串以0结束，或者如果cl!=0，则输出cl长度
     push ax
+    push bx
     push cx
     push dx
     mov ah,02h
@@ -28,6 +29,7 @@ printString proc
     printbreak:
         pop dx
         pop cx
+        pop bx
         pop ax
     ret
 printString endp
